@@ -28,30 +28,49 @@ interface DetectionResult {
 
 type LibraryStatus = "loading" | "ready" | "error";
 
+interface OpenCVParams {
+  scaleFactor: number;
+  minNeighbors: number;
+  minSize: number;
+}
+
+interface FaceApiParams {
+  inputSize: number;
+  scoreThreshold: number;
+}
+
 // =============================================================================
 // CDN Script Loader
 // =============================================================================
 
+const scriptLoadPromises = new Map<string, Promise<void>>();
+
 function loadScript(src: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
-      resolve();
-      return;
-    }
+  const existing = scriptLoadPromises.get(src);
+  if (existing) return existing;
+
+  const promise = new Promise<void>((resolve, reject) => {
     const script = document.createElement("script");
     script.src = src;
     script.async = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error(`Failed to load: ${src}`));
+    script.onerror = () => {
+      scriptLoadPromises.delete(src);
+      reject(new Error(`Failed to load: ${src}`));
+    };
     document.head.appendChild(script);
   });
+
+  scriptLoadPromises.set(src, promise);
+  return promise;
 }
 
 // =============================================================================
 // OpenCV.js (WASM) - Initialization & Detection
 // =============================================================================
 
-const OPENCV_CDN = "https://docs.opencv.org/4.9.0/opencv.js";
+const OPENCV_CDN =
+  "https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.9.0-release.2/dist/opencv.js";
 const HAAR_CASCADE_URL =
   "https://raw.githubusercontent.com/opencv/opencv/4.x/data/haarcascades/haarcascade_frontalface_default.xml";
 const HAAR_CASCADE_FILE = "haarcascade_frontalface_default.xml";
@@ -59,11 +78,20 @@ const HAAR_CASCADE_FILE = "haarcascade_frontalface_default.xml";
 async function initOpenCV(): Promise<void> {
   await loadScript(OPENCV_CDN);
 
-  const cv = (window as Record<string, unknown>).cv as Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let cv = (window as any).cv;
   if (!cv) throw new Error("OpenCV.js failed to load");
 
-  // Wait for WASM runtime initialization
-  if (!cv.Mat) {
+  // OpenCV.js 4.5+ uses a factory function pattern:
+  // window.cv is a function that returns a Promise resolving to the module.
+  if (typeof cv === "function") {
+    cv = await cv();
+    (window as any).cv = cv;
+  } else if (cv instanceof Promise) {
+    cv = await cv;
+    (window as any).cv = cv;
+  } else if (!cv.Mat) {
+    // Old-style: wait for WASM runtime initialization
     await new Promise<void>((resolve) => {
       cv["onRuntimeInitialized"] = () => resolve();
     });
@@ -92,14 +120,21 @@ async function initOpenCV(): Promise<void> {
   }
 }
 
-function detectWithOpenCV(imgElement: HTMLImageElement): DetectionResult {
+function detectWithOpenCV(imgElement: HTMLImageElement, params: OpenCVParams): DetectionResult {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cv = (window as any).cv;
 
   const startTime = performance.now();
 
-  // Read image into OpenCV Mat
-  const mat = cv.imread(imgElement);
+  // Read image at natural size using a temporary canvas to avoid
+  // cv.imread using the displayed (CSS-scaled) size
+  const tmpCanvas = document.createElement("canvas");
+  tmpCanvas.width = imgElement.naturalWidth;
+  tmpCanvas.height = imgElement.naturalHeight;
+  const tmpCtx = tmpCanvas.getContext("2d")!;
+  tmpCtx.drawImage(imgElement, 0, 0, imgElement.naturalWidth, imgElement.naturalHeight);
+
+  const mat = cv.imread(tmpCanvas);
   const gray = new cv.Mat();
   cv.cvtColor(mat, gray, cv.COLOR_RGBA2GRAY);
 
@@ -113,16 +148,16 @@ function detectWithOpenCV(imgElement: HTMLImageElement): DetectionResult {
   classifier.detectMultiScale(
     gray,
     faces,
-    1.1, // scaleFactor
-    5, // minNeighbors
+    params.scaleFactor,
+    params.minNeighbors,
     0, // flags
-    new cv.Size(30, 30), // minSize
+    new cv.Size(params.minSize, params.minSize),
     new cv.Size(0, 0) // maxSize (no limit)
   );
 
   const endTime = performance.now();
 
-  // Extract face rectangles
+  // Extract face rectangles (coordinates are now in natural image space)
   const faceRects: FaceRect[] = [];
   for (let i = 0; i < faces.size(); i++) {
     const face = faces.get(i);
@@ -171,7 +206,8 @@ async function initFaceApi(): Promise<void> {
 }
 
 async function detectWithFaceApi(
-  imgElement: HTMLImageElement
+  imgElement: HTMLImageElement,
+  params: FaceApiParams
 ): Promise<DetectionResult> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const faceapi = (window as any).faceapi;
@@ -181,8 +217,8 @@ async function detectWithFaceApi(
   const detections = await faceapi.detectAllFaces(
     imgElement,
     new faceapi.TinyFaceDetectorOptions({
-      inputSize: 512,
-      scoreThreshold: 0.5,
+      inputSize: params.inputSize,
+      scoreThreshold: params.scoreThreshold,
     })
   );
 
@@ -307,6 +343,18 @@ export default function FaceDetectionApp() {
   const [opencvError, setOpencvError] = useState<string | null>(null);
   const [faceApiError, setFaceApiError] = useState<string | null>(null);
 
+  // Detection parameters
+  const [opencvParams, setOpencvParams] = useState<OpenCVParams>({
+    scaleFactor: 1.1,
+    minNeighbors: 6,
+    minSize: 80,
+  });
+  const [faceApiParams, setFaceApiParams] = useState<FaceApiParams>({
+    inputSize: 512,
+    scoreThreshold: 0.4,
+  });
+  const [showParams, setShowParams] = useState(false);
+
   // Refs
   const imageRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -383,44 +431,51 @@ export default function FaceDetectionApp() {
     const [opencvRes, faceApiRes] = await Promise.allSettled([
       (async () => {
         if (opencvStatus !== "ready") throw new Error("OpenCV not loaded");
-        return detectWithOpenCV(img);
+        return detectWithOpenCV(img, opencvParams);
       })(),
       (async () => {
         if (faceApiStatus !== "ready") throw new Error("face-api.js not loaded");
-        return detectWithFaceApi(img);
+        return detectWithFaceApi(img, faceApiParams);
       })(),
     ]);
 
     if (opencvRes.status === "fulfilled") {
       setOpencvResult(opencvRes.value);
-      if (opencvCanvasRef.current) {
-        drawDetections(
-          opencvCanvasRef.current,
-          img,
-          opencvRes.value.faces,
-          "#22c55e"
-        );
-      }
     } else {
       setOpencvError(opencvRes.reason?.message || "Detection failed");
     }
 
     if (faceApiRes.status === "fulfilled") {
       setFaceApiResult(faceApiRes.value);
-      if (faceApiCanvasRef.current) {
-        drawDetections(
-          faceApiCanvasRef.current,
-          img,
-          faceApiRes.value.faces,
-          "#3b82f6"
-        );
-      }
     } else {
       setFaceApiError(faceApiRes.reason?.message || "Detection failed");
     }
 
     setIsDetecting(false);
-  }, [opencvStatus, faceApiStatus]);
+  }, [opencvStatus, faceApiStatus, opencvParams, faceApiParams]);
+
+  // Draw detections on canvas after React renders the canvas elements
+  useEffect(() => {
+    if (opencvResult && opencvCanvasRef.current && imageRef.current) {
+      drawDetections(
+        opencvCanvasRef.current,
+        imageRef.current,
+        opencvResult.faces,
+        "#22c55e"
+      );
+    }
+  }, [opencvResult]);
+
+  useEffect(() => {
+    if (faceApiResult && faceApiCanvasRef.current && imageRef.current) {
+      drawDetections(
+        faceApiCanvasRef.current,
+        imageRef.current,
+        faceApiResult.faces,
+        "#3b82f6"
+      );
+    }
+  }, [faceApiResult]);
 
   // Download cropped face
   const downloadFace = (dataUrl: string, index: number, method: string) => {
@@ -485,6 +540,122 @@ export default function FaceDetectionApp() {
           <StatusBadge status={opencvStatus} label="OpenCV WASM" />
           <StatusBadge status={faceApiStatus} label="face-api.js" />
         </div>
+      </div>
+
+      {/* Detection Parameters */}
+      <div className="mb-6">
+        <button
+          onClick={() => setShowParams((v) => !v)}
+          className="flex items-center gap-2 mx-auto px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <svg
+            className={`h-4 w-4 transition-transform ${showParams ? "rotate-180" : ""}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+          Detection Parameters
+        </button>
+
+        {showParams && (
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* OpenCV Parameters */}
+            <div className="bg-white rounded-xl shadow p-4 border border-green-200">
+              <h3 className="font-semibold text-green-700 mb-3 text-sm">OpenCV.js (WASM)</h3>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-xs text-gray-600 mb-1">
+                    <label>scaleFactor</label>
+                    <span className="font-mono">{opencvParams.scaleFactor.toFixed(2)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1.01"
+                    max="1.5"
+                    step="0.01"
+                    value={opencvParams.scaleFactor}
+                    onChange={(e) => setOpencvParams((p) => ({ ...p, scaleFactor: parseFloat(e.target.value) }))}
+                    className="w-full accent-green-500"
+                  />
+                  <p className="text-xs text-gray-400">小さい→精度高/遅い　大きい→速い/粗い</p>
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs text-gray-600 mb-1">
+                    <label>minNeighbors</label>
+                    <span className="font-mono">{opencvParams.minNeighbors}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="15"
+                    step="1"
+                    value={opencvParams.minNeighbors}
+                    onChange={(e) => setOpencvParams((p) => ({ ...p, minNeighbors: parseInt(e.target.value) }))}
+                    className="w-full accent-green-500"
+                  />
+                  <p className="text-xs text-gray-400">大きい→誤検出減少　小さい→検出漏れ減少</p>
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs text-gray-600 mb-1">
+                    <label>minSize (px)</label>
+                    <span className="font-mono">{opencvParams.minSize}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="20"
+                    max="300"
+                    step="10"
+                    value={opencvParams.minSize}
+                    onChange={(e) => setOpencvParams((p) => ({ ...p, minSize: parseInt(e.target.value) }))}
+                    className="w-full accent-green-500"
+                  />
+                  <p className="text-xs text-gray-400">検出する顔の最小サイズ（大きい→小顔を無視）</p>
+                </div>
+              </div>
+            </div>
+
+            {/* face-api.js Parameters */}
+            <div className="bg-white rounded-xl shadow p-4 border border-blue-200">
+              <h3 className="font-semibold text-blue-700 mb-3 text-sm">face-api.js (WebGL)</h3>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-xs text-gray-600 mb-1">
+                    <label>inputSize</label>
+                    <span className="font-mono">{faceApiParams.inputSize}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="128"
+                    max="1024"
+                    step="32"
+                    value={faceApiParams.inputSize}
+                    onChange={(e) => setFaceApiParams((p) => ({ ...p, inputSize: parseInt(e.target.value) }))}
+                    className="w-full accent-blue-500"
+                  />
+                  <p className="text-xs text-gray-400">大きい→精度高/遅い　小さい→速い/検出漏れ増加</p>
+                </div>
+                <div>
+                  <div className="flex justify-between text-xs text-gray-600 mb-1">
+                    <label>scoreThreshold</label>
+                    <span className="font-mono">{faceApiParams.scoreThreshold.toFixed(2)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="0.9"
+                    step="0.05"
+                    value={faceApiParams.scoreThreshold}
+                    onChange={(e) => setFaceApiParams((p) => ({ ...p, scoreThreshold: parseFloat(e.target.value) }))}
+                    className="w-full accent-blue-500"
+                  />
+                  <p className="text-xs text-gray-400">小さい→検出漏れ減少　大きい→誤検出減少</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Upload Area */}
