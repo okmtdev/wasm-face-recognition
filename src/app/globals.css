@@ -14,7 +14,7 @@ body {
 }
 
 .drop-zone {
-  @apply border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer transition-colors;
+  @apply border-2 border-dashed border-gray-300 rounded-xl p-4 sm:p-8 text-center cursor-pointer transition-colors;
 }
 
 .drop-zone:hover,
@@ -30,8 +30,16 @@ body {
   @apply w-full h-auto;
 }
 
+/* Show download overlay on touch devices */
+@media (hover: none) {
+  .face-card button {
+    opacity: 1 !important;
+    background: rgba(0, 0, 0, 0.35);
+  }
+}
+
 .detection-panel {
-  @apply bg-white rounded-xl shadow-lg p-6;
+  @apply bg-white rounded-xl shadow-lg p-4 sm:p-6;
 }
 
 .speed-bar {

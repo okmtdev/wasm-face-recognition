@@ -78,7 +78,6 @@ const HAAR_CASCADE_FILE = "haarcascade_frontalface_default.xml";
 async function initOpenCV(): Promise<void> {
   await loadScript(OPENCV_CDN);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let cv = (window as any).cv;
   if (!cv) throw new Error("OpenCV.js failed to load");
 
@@ -101,7 +100,6 @@ async function initOpenCV(): Promise<void> {
   const cvAny = cv as Record<string, (...args: unknown[]) => unknown>;
   let needsLoad = true;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const testClassifier = new (cv as any).CascadeClassifier();
     if (testClassifier.load(HAAR_CASCADE_FILE)) {
       needsLoad = false;
@@ -121,7 +119,6 @@ async function initOpenCV(): Promise<void> {
 }
 
 function detectWithOpenCV(imgElement: HTMLImageElement, params: OpenCVParams): DetectionResult {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cv = (window as any).cv;
 
   const startTime = performance.now();
@@ -197,7 +194,6 @@ const FACE_API_MODEL_URL =
 async function initFaceApi(): Promise<void> {
   await loadScript(FACE_API_CDN);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const faceapi = (window as any).faceapi;
   if (!faceapi) throw new Error("face-api.js failed to load");
 
@@ -209,7 +205,6 @@ async function detectWithFaceApi(
   imgElement: HTMLImageElement,
   params: FaceApiParams
 ): Promise<DetectionResult> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const faceapi = (window as any).faceapi;
 
   const startTime = performance.now();
@@ -346,12 +341,12 @@ export default function FaceDetectionApp() {
   // Detection parameters
   const [opencvParams, setOpencvParams] = useState<OpenCVParams>({
     scaleFactor: 1.1,
-    minNeighbors: 6,
+    minNeighbors: 9,
     minSize: 80,
   });
   const [faceApiParams, setFaceApiParams] = useState<FaceApiParams>({
-    inputSize: 512,
-    scoreThreshold: 0.4,
+    inputSize: 704,
+    scoreThreshold: 0.3,
   });
   const [showParams, setShowParams] = useState(false);
 
@@ -528,15 +523,15 @@ export default function FaceDetectionApp() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+      <div className="text-center mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
           Face Detection: WASM vs WebGL
         </h1>
-        <p className="text-gray-600 mb-4">
+        <p className="text-sm sm:text-base text-gray-600 mb-4 px-2">
           OpenCV.js (WASM / Haar Cascade) vs face-api.js (WebGL /
           TinyFaceDetector)
         </p>
-        <div className="flex justify-center gap-3 flex-wrap">
+        <div className="flex justify-center gap-2 sm:gap-3 flex-wrap">
           <StatusBadge status={opencvStatus} label="OpenCV WASM" />
           <StatusBadge status={faceApiStatus} label="face-api.js" />
         </div>
@@ -579,7 +574,7 @@ export default function FaceDetectionApp() {
                     onChange={(e) => setOpencvParams((p) => ({ ...p, scaleFactor: parseFloat(e.target.value) }))}
                     className="w-full accent-green-500"
                   />
-                  <p className="text-xs text-gray-400">小さい→精度高/遅い　大きい→速い/粗い</p>
+                  <p className="text-xs text-gray-400">Lower → more accurate / slower. Higher → faster / coarser</p>
                 </div>
                 <div>
                   <div className="flex justify-between text-xs text-gray-600 mb-1">
@@ -595,7 +590,7 @@ export default function FaceDetectionApp() {
                     onChange={(e) => setOpencvParams((p) => ({ ...p, minNeighbors: parseInt(e.target.value) }))}
                     className="w-full accent-green-500"
                   />
-                  <p className="text-xs text-gray-400">大きい→誤検出減少　小さい→検出漏れ減少</p>
+                  <p className="text-xs text-gray-400">Higher → fewer false positives. Lower → fewer missed faces</p>
                 </div>
                 <div>
                   <div className="flex justify-between text-xs text-gray-600 mb-1">
@@ -611,7 +606,7 @@ export default function FaceDetectionApp() {
                     onChange={(e) => setOpencvParams((p) => ({ ...p, minSize: parseInt(e.target.value) }))}
                     className="w-full accent-green-500"
                   />
-                  <p className="text-xs text-gray-400">検出する顔の最小サイズ（大きい→小顔を無視）</p>
+                  <p className="text-xs text-gray-400">Min face size to detect. Higher → ignores small faces</p>
                 </div>
               </div>
             </div>
@@ -634,7 +629,7 @@ export default function FaceDetectionApp() {
                     onChange={(e) => setFaceApiParams((p) => ({ ...p, inputSize: parseInt(e.target.value) }))}
                     className="w-full accent-blue-500"
                   />
-                  <p className="text-xs text-gray-400">大きい→精度高/遅い　小さい→速い/検出漏れ増加</p>
+                  <p className="text-xs text-gray-400">Higher → more accurate / slower. Lower → faster / more misses</p>
                 </div>
                 <div>
                   <div className="flex justify-between text-xs text-gray-600 mb-1">
@@ -650,7 +645,7 @@ export default function FaceDetectionApp() {
                     onChange={(e) => setFaceApiParams((p) => ({ ...p, scoreThreshold: parseFloat(e.target.value) }))}
                     className="w-full accent-blue-500"
                   />
-                  <p className="text-xs text-gray-400">小さい→検出漏れ減少　大きい→誤検出減少</p>
+                  <p className="text-xs text-gray-400">Lower → fewer missed faces. Higher → fewer false positives</p>
                 </div>
               </div>
             </div>
@@ -684,7 +679,7 @@ export default function FaceDetectionApp() {
           ) : (
             <div className="py-12">
               <svg
-                className="mx-auto h-16 w-16 text-gray-400 mb-4"
+                className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-3 sm:mb-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -696,10 +691,10 @@ export default function FaceDetectionApp() {
                   d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
-              <p className="text-lg text-gray-600 font-medium">
+              <p className="text-base sm:text-lg text-gray-600 font-medium">
                 Drop an image here, or click to select
               </p>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-xs sm:text-sm text-gray-400 mt-1">
                 JPG, PNG, WebP supported
               </p>
             </div>
@@ -723,7 +718,7 @@ export default function FaceDetectionApp() {
               isDetecting ||
               (opencvStatus !== "ready" && faceApiStatus !== "ready")
             }
-            className="px-8 py-3 bg-gray-900 text-white rounded-lg font-medium text-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="w-full sm:w-auto px-8 py-3 bg-gray-900 text-white rounded-lg font-medium text-base sm:text-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
             {isDetecting ? (
               <span className="flex items-center gap-2">
@@ -760,13 +755,13 @@ export default function FaceDetectionApp() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* OpenCV WASM Panel */}
           <div className="detection-panel border-2 border-green-200">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-3 sm:mb-4">
               <span className="w-3 h-3 rounded-full bg-green-500" />
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                 OpenCV.js (WASM)
               </h2>
             </div>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
               Haar Cascade Classifier
             </p>
 
@@ -774,11 +769,11 @@ export default function FaceDetectionApp() {
               <p className="text-red-600">{opencvError}</p>
             ) : opencvResult ? (
               <>
-                <div className="flex gap-4 mb-4 text-sm">
-                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">
+                <div className="flex gap-2 sm:gap-4 mb-3 sm:mb-4 text-xs sm:text-sm">
+                  <span className="bg-green-100 text-green-700 px-2 sm:px-3 py-1 rounded-full font-medium">
                     {opencvResult.processingTime.toFixed(1)}ms
                   </span>
-                  <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium">
+                  <span className="bg-gray-100 text-gray-700 px-2 sm:px-3 py-1 rounded-full font-medium">
                     {opencvResult.faces.length} face
                     {opencvResult.faces.length !== 1 ? "s" : ""}
                   </span>
@@ -798,7 +793,7 @@ export default function FaceDetectionApp() {
                     <h3 className="text-sm font-semibold text-gray-700 mb-2">
                       Cropped Faces
                     </h3>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                       {opencvResult.croppedFaces.map((face, i) => (
                         <div key={i} className="face-card group">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -845,13 +840,13 @@ export default function FaceDetectionApp() {
 
           {/* face-api.js WebGL Panel */}
           <div className="detection-panel border-2 border-blue-200">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-3 sm:mb-4">
               <span className="w-3 h-3 rounded-full bg-blue-500" />
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                 face-api.js (WebGL)
               </h2>
             </div>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
               TinyFaceDetector (Neural Network)
             </p>
 
@@ -859,11 +854,11 @@ export default function FaceDetectionApp() {
               <p className="text-red-600">{faceApiError}</p>
             ) : faceApiResult ? (
               <>
-                <div className="flex gap-4 mb-4 text-sm">
-                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
+                <div className="flex gap-2 sm:gap-4 mb-3 sm:mb-4 text-xs sm:text-sm">
+                  <span className="bg-blue-100 text-blue-700 px-2 sm:px-3 py-1 rounded-full font-medium">
                     {faceApiResult.processingTime.toFixed(1)}ms
                   </span>
-                  <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-medium">
+                  <span className="bg-gray-100 text-gray-700 px-2 sm:px-3 py-1 rounded-full font-medium">
                     {faceApiResult.faces.length} face
                     {faceApiResult.faces.length !== 1 ? "s" : ""}
                   </span>
@@ -883,7 +878,7 @@ export default function FaceDetectionApp() {
                     <h3 className="text-sm font-semibold text-gray-700 mb-2">
                       Cropped Faces
                     </h3>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                       {faceApiResult.croppedFaces.map((face, i) => (
                         <div key={i} className="face-card group">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -932,8 +927,8 @@ export default function FaceDetectionApp() {
 
       {/* Speed Comparison */}
       {opencvResult && faceApiResult && (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
             Speed Comparison
           </h2>
 
@@ -1038,11 +1033,11 @@ export default function FaceDetectionApp() {
       )}
 
       {/* Technical Details */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
           Technical Details
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-xs sm:text-sm">
           <div>
             <h3 className="font-semibold text-green-700 mb-2">
               OpenCV.js (WASM)
