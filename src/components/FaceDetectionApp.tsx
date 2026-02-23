@@ -489,21 +489,21 @@ export default function FaceDetectionApp() {
     label: string;
   }) => (
     <span
-      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${
+      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md border transition-all duration-300 ${
         status === "ready"
-          ? "bg-green-100 text-green-700"
+          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
           : status === "loading"
-            ? "bg-yellow-100 text-yellow-700 loading-pulse"
-            : "bg-red-100 text-red-700"
+            ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+            : "bg-red-500/10 text-red-400 border-red-500/30"
       }`}
     >
       <span
-        className={`w-2 h-2 rounded-full ${
+        className={`w-1.5 h-1.5 rounded-full ${
           status === "ready"
-            ? "bg-green-500"
+            ? "bg-emerald-400"
             : status === "loading"
-              ? "bg-yellow-500"
-              : "bg-red-500"
+              ? "bg-amber-400 status-dot-loading"
+              : "bg-red-400"
         }`}
       />
       {label}:{" "}
@@ -523,17 +523,24 @@ export default function FaceDetectionApp() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="text-center mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-          Face Detection: WASM vs WebGL
+      <div className="text-center mb-8 sm:mb-12">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 text-xs font-medium mb-4 backdrop-blur-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          Browser-native inference
+        </div>
+        <h1 className="text-3xl sm:text-5xl font-bold mb-3 tracking-tight">
+          <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+            Face Detection
+          </span>
         </h1>
-        <p className="text-sm sm:text-base text-gray-600 mb-4 px-2">
-          OpenCV.js (WASM / Haar Cascade) vs face-api.js (WebGL /
-          TinyFaceDetector)
+        <p className="text-sm sm:text-base text-zinc-500 mb-6 max-w-lg mx-auto">
+          Haar Cascade <span className="text-zinc-600">·</span> WASM{" "}
+          <span className="text-emerald-500/60 mx-1">vs</span>{" "}
+          TinyFaceDetector <span className="text-zinc-600">·</span> WebGL
         </p>
         <div className="flex justify-center gap-2 sm:gap-3 flex-wrap">
-          <StatusBadge status={opencvStatus} label="OpenCV WASM" />
-          <StatusBadge status={faceApiStatus} label="face-api.js" />
+          <StatusBadge status={opencvStatus} label="OpenCV" />
+          <StatusBadge status={faceApiStatus} label="face-api" />
         </div>
       </div>
 
@@ -541,10 +548,10 @@ export default function FaceDetectionApp() {
       <div className="mb-6">
         <button
           onClick={() => setShowParams((v) => !v)}
-          className="flex items-center gap-2 mx-auto px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-2 mx-auto px-4 py-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors rounded-lg hover:bg-zinc-800/50"
         >
           <svg
-            className={`h-4 w-4 transition-transform ${showParams ? "rotate-180" : ""}`}
+            className={`h-3.5 w-3.5 transition-transform duration-300 ${showParams ? "rotate-180" : ""}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -555,15 +562,15 @@ export default function FaceDetectionApp() {
         </button>
 
         {showParams && (
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
             {/* OpenCV Parameters */}
-            <div className="bg-white rounded-xl shadow p-4 border border-green-200">
-              <h3 className="font-semibold text-green-700 mb-3 text-sm">OpenCV.js (WASM)</h3>
-              <div className="space-y-3">
+            <div className="glass-card panel-green">
+              <h3 className="font-semibold text-emerald-400 mb-4 text-xs uppercase tracking-wider">OpenCV.js — WASM</h3>
+              <div className="space-y-4">
                 <div>
-                  <div className="flex justify-between text-xs text-gray-600 mb-1">
-                    <label>scaleFactor</label>
-                    <span className="font-mono">{opencvParams.scaleFactor.toFixed(2)}</span>
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <label className="text-zinc-400">scaleFactor</label>
+                    <span className="mono-value text-emerald-400">{opencvParams.scaleFactor.toFixed(2)}</span>
                   </div>
                   <input
                     type="range"
@@ -572,14 +579,14 @@ export default function FaceDetectionApp() {
                     step="0.01"
                     value={opencvParams.scaleFactor}
                     onChange={(e) => setOpencvParams((p) => ({ ...p, scaleFactor: parseFloat(e.target.value) }))}
-                    className="w-full accent-green-500"
+                    className="w-full accent-green"
                   />
-                  <p className="text-xs text-gray-400">Lower → more accurate / slower. Higher → faster / coarser</p>
+                  <p className="text-[10px] text-zinc-600 mt-1">Lower → more accurate / slower</p>
                 </div>
                 <div>
-                  <div className="flex justify-between text-xs text-gray-600 mb-1">
-                    <label>minNeighbors</label>
-                    <span className="font-mono">{opencvParams.minNeighbors}</span>
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <label className="text-zinc-400">minNeighbors</label>
+                    <span className="mono-value text-emerald-400">{opencvParams.minNeighbors}</span>
                   </div>
                   <input
                     type="range"
@@ -588,14 +595,14 @@ export default function FaceDetectionApp() {
                     step="1"
                     value={opencvParams.minNeighbors}
                     onChange={(e) => setOpencvParams((p) => ({ ...p, minNeighbors: parseInt(e.target.value) }))}
-                    className="w-full accent-green-500"
+                    className="w-full accent-green"
                   />
-                  <p className="text-xs text-gray-400">Higher → fewer false positives. Lower → fewer missed faces</p>
+                  <p className="text-[10px] text-zinc-600 mt-1">Higher → fewer false positives</p>
                 </div>
                 <div>
-                  <div className="flex justify-between text-xs text-gray-600 mb-1">
-                    <label>minSize (px)</label>
-                    <span className="font-mono">{opencvParams.minSize}</span>
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <label className="text-zinc-400">minSize (px)</label>
+                    <span className="mono-value text-emerald-400">{opencvParams.minSize}</span>
                   </div>
                   <input
                     type="range"
@@ -604,21 +611,21 @@ export default function FaceDetectionApp() {
                     step="10"
                     value={opencvParams.minSize}
                     onChange={(e) => setOpencvParams((p) => ({ ...p, minSize: parseInt(e.target.value) }))}
-                    className="w-full accent-green-500"
+                    className="w-full accent-green"
                   />
-                  <p className="text-xs text-gray-400">Min face size to detect. Higher → ignores small faces</p>
+                  <p className="text-[10px] text-zinc-600 mt-1">Min face size to detect</p>
                 </div>
               </div>
             </div>
 
             {/* face-api.js Parameters */}
-            <div className="bg-white rounded-xl shadow p-4 border border-blue-200">
-              <h3 className="font-semibold text-blue-700 mb-3 text-sm">face-api.js (WebGL)</h3>
-              <div className="space-y-3">
+            <div className="glass-card panel-blue">
+              <h3 className="font-semibold text-blue-400 mb-4 text-xs uppercase tracking-wider">face-api.js — WebGL</h3>
+              <div className="space-y-4">
                 <div>
-                  <div className="flex justify-between text-xs text-gray-600 mb-1">
-                    <label>inputSize</label>
-                    <span className="font-mono">{faceApiParams.inputSize}</span>
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <label className="text-zinc-400">inputSize</label>
+                    <span className="mono-value text-blue-400">{faceApiParams.inputSize}</span>
                   </div>
                   <input
                     type="range"
@@ -627,14 +634,14 @@ export default function FaceDetectionApp() {
                     step="32"
                     value={faceApiParams.inputSize}
                     onChange={(e) => setFaceApiParams((p) => ({ ...p, inputSize: parseInt(e.target.value) }))}
-                    className="w-full accent-blue-500"
+                    className="w-full accent-blue"
                   />
-                  <p className="text-xs text-gray-400">Higher → more accurate / slower. Lower → faster / more misses</p>
+                  <p className="text-[10px] text-zinc-600 mt-1">Higher → more accurate / slower</p>
                 </div>
                 <div>
-                  <div className="flex justify-between text-xs text-gray-600 mb-1">
-                    <label>scoreThreshold</label>
-                    <span className="font-mono">{faceApiParams.scoreThreshold.toFixed(2)}</span>
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <label className="text-zinc-400">scoreThreshold</label>
+                    <span className="mono-value text-blue-400">{faceApiParams.scoreThreshold.toFixed(2)}</span>
                   </div>
                   <input
                     type="range"
@@ -643,9 +650,9 @@ export default function FaceDetectionApp() {
                     step="0.05"
                     value={faceApiParams.scoreThreshold}
                     onChange={(e) => setFaceApiParams((p) => ({ ...p, scoreThreshold: parseFloat(e.target.value) }))}
-                    className="w-full accent-blue-500"
+                    className="w-full accent-blue"
                   />
-                  <p className="text-xs text-gray-400">Lower → fewer missed faces. Higher → fewer false positives</p>
+                  <p className="text-[10px] text-zinc-600 mt-1">Lower → fewer missed faces</p>
                 </div>
               </div>
             </div>
@@ -656,7 +663,7 @@ export default function FaceDetectionApp() {
       {/* Upload Area */}
       <div className="mb-6">
         <div
-          className={`drop-zone ${isDragOver ? "drag-over" : ""}`}
+          className={`drop-zone ${isDragOver ? "drag-over" : ""} ${isDetecting ? "scan-effect" : ""}`}
           onClick={() => fileInputRef.current?.click()}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -672,29 +679,31 @@ export default function FaceDetectionApp() {
                 className="max-h-80 mx-auto rounded-lg"
                 crossOrigin="anonymous"
               />
-              <p className="mt-3 text-sm text-gray-500">
+              <p className="mt-3 text-xs text-zinc-600">
                 Click or drag to change image
               </p>
             </div>
           ) : (
-            <div className="py-12">
-              <svg
-                className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-3 sm:mb-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-              <p className="text-base sm:text-lg text-gray-600 font-medium">
+            <div className="py-12 sm:py-16">
+              <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center mb-4 sm:mb-5">
+                <svg
+                  className="h-8 w-8 sm:h-10 sm:w-10 text-zinc-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm sm:text-base text-zinc-400 font-medium">
                 Drop an image here, or click to select
               </p>
-              <p className="text-xs sm:text-sm text-gray-400 mt-1">
+              <p className="text-xs text-zinc-600 mt-1.5">
                 JPG, PNG, WebP supported
               </p>
             </div>
@@ -711,19 +720,19 @@ export default function FaceDetectionApp() {
 
       {/* Detect Button */}
       {imageUrl && (
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 animate-fade-in">
           <button
             onClick={runDetection}
             disabled={
               isDetecting ||
               (opencvStatus !== "ready" && faceApiStatus !== "ready")
             }
-            className="w-full sm:w-auto px-8 py-3 bg-gray-900 text-white rounded-lg font-medium text-base sm:text-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="btn-detect w-full sm:w-auto px-10 py-3.5 text-white rounded-xl font-semibold text-sm sm:text-base tracking-wide"
           >
             {isDetecting ? (
-              <span className="flex items-center gap-2">
+              <span className="flex items-center justify-center gap-2.5">
                 <svg
-                  className="animate-spin h-5 w-5"
+                  className="animate-spin h-4 w-4"
                   viewBox="0 0 24 24"
                   fill="none"
                 >
@@ -741,10 +750,15 @@ export default function FaceDetectionApp() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                   />
                 </svg>
-                Detecting...
+                Processing...
               </span>
             ) : (
-              "Detect Faces"
+              <span className="flex items-center justify-center gap-2">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Detect Faces
+              </span>
             )}
           </button>
         </div>
@@ -752,48 +766,49 @@ export default function FaceDetectionApp() {
 
       {/* Detection Results - Side by Side */}
       {(opencvResult || faceApiResult || opencvError || faceApiError) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8 animate-fade-in">
           {/* OpenCV WASM Panel */}
-          <div className="detection-panel border-2 border-green-200">
-            <div className="flex items-center gap-2 mb-3 sm:mb-4">
-              <span className="w-3 h-3 rounded-full bg-green-500" />
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                OpenCV.js (WASM)
+          <div className={`glass-card panel-green ${opencvResult ? "has-result" : ""}`}>
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+              <h2 className="text-base sm:text-lg font-bold text-zinc-200">
+                OpenCV.js
               </h2>
+              <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-medium ml-auto">WASM</span>
             </div>
-            <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
+            <p className="text-xs text-zinc-500 mb-3">
               Haar Cascade Classifier
             </p>
 
             {opencvError ? (
-              <p className="text-red-600">{opencvError}</p>
+              <p className="text-red-400 text-sm">{opencvError}</p>
             ) : opencvResult ? (
               <>
-                <div className="flex gap-2 sm:gap-4 mb-3 sm:mb-4 text-xs sm:text-sm">
-                  <span className="bg-green-100 text-green-700 px-2 sm:px-3 py-1 rounded-full font-medium">
+                <div className="flex gap-2 mb-4 text-xs">
+                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full font-medium mono-value">
                     {opencvResult.processingTime.toFixed(1)}ms
                   </span>
-                  <span className="bg-gray-100 text-gray-700 px-2 sm:px-3 py-1 rounded-full font-medium">
+                  <span className="bg-zinc-800 text-zinc-400 border border-zinc-700/50 px-2.5 py-1 rounded-full font-medium">
                     {opencvResult.faces.length} face
                     {opencvResult.faces.length !== 1 ? "s" : ""}
                   </span>
                 </div>
 
                 {/* Detection overlay */}
-                <div className="mb-4 bg-gray-100 rounded-lg overflow-hidden">
+                <div className="canvas-frame mb-4">
                   <canvas
                     ref={opencvCanvasRef}
-                    className="w-full h-auto"
+                    className="w-full h-auto block"
                   />
                 </div>
 
                 {/* Cropped faces */}
                 {opencvResult.croppedFaces.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
                       Cropped Faces
                     </h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       {opencvResult.croppedFaces.map((face, i) => (
                         <div key={i} className="face-card group">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -804,10 +819,10 @@ export default function FaceDetectionApp() {
                           />
                           <button
                             onClick={() => downloadFace(face, i, "opencv")}
-                            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                            className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                           >
                             <svg
-                              className="h-6 w-6 text-white"
+                              className="h-5 w-5 text-white"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -820,7 +835,7 @@ export default function FaceDetectionApp() {
                               />
                             </svg>
                           </button>
-                          <span className="absolute top-1 left-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded">
+                          <span className="absolute top-1 left-1 bg-emerald-500/90 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
                             #{i + 1}
                           </span>
                         </div>
@@ -830,7 +845,7 @@ export default function FaceDetectionApp() {
                 )}
 
                 {opencvResult.faces.length === 0 && (
-                  <p className="text-gray-500 text-center py-4">
+                  <p className="text-zinc-600 text-center py-6 text-sm">
                     No faces detected
                   </p>
                 )}
@@ -839,46 +854,47 @@ export default function FaceDetectionApp() {
           </div>
 
           {/* face-api.js WebGL Panel */}
-          <div className="detection-panel border-2 border-blue-200">
-            <div className="flex items-center gap-2 mb-3 sm:mb-4">
-              <span className="w-3 h-3 rounded-full bg-blue-500" />
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                face-api.js (WebGL)
+          <div className={`glass-card panel-blue ${faceApiResult ? "has-result" : ""}`}>
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+              <h2 className="text-base sm:text-lg font-bold text-zinc-200">
+                face-api.js
               </h2>
+              <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-medium ml-auto">WebGL</span>
             </div>
-            <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
+            <p className="text-xs text-zinc-500 mb-3">
               TinyFaceDetector (Neural Network)
             </p>
 
             {faceApiError ? (
-              <p className="text-red-600">{faceApiError}</p>
+              <p className="text-red-400 text-sm">{faceApiError}</p>
             ) : faceApiResult ? (
               <>
-                <div className="flex gap-2 sm:gap-4 mb-3 sm:mb-4 text-xs sm:text-sm">
-                  <span className="bg-blue-100 text-blue-700 px-2 sm:px-3 py-1 rounded-full font-medium">
+                <div className="flex gap-2 mb-4 text-xs">
+                  <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-full font-medium mono-value">
                     {faceApiResult.processingTime.toFixed(1)}ms
                   </span>
-                  <span className="bg-gray-100 text-gray-700 px-2 sm:px-3 py-1 rounded-full font-medium">
+                  <span className="bg-zinc-800 text-zinc-400 border border-zinc-700/50 px-2.5 py-1 rounded-full font-medium">
                     {faceApiResult.faces.length} face
                     {faceApiResult.faces.length !== 1 ? "s" : ""}
                   </span>
                 </div>
 
                 {/* Detection overlay */}
-                <div className="mb-4 bg-gray-100 rounded-lg overflow-hidden">
+                <div className="canvas-frame mb-4">
                   <canvas
                     ref={faceApiCanvasRef}
-                    className="w-full h-auto"
+                    className="w-full h-auto block"
                   />
                 </div>
 
                 {/* Cropped faces */}
                 {faceApiResult.croppedFaces.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
                       Cropped Faces
                     </h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                       {faceApiResult.croppedFaces.map((face, i) => (
                         <div key={i} className="face-card group">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -889,10 +905,10 @@ export default function FaceDetectionApp() {
                           />
                           <button
                             onClick={() => downloadFace(face, i, "faceapi")}
-                            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                            className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                           >
                             <svg
-                              className="h-6 w-6 text-white"
+                              className="h-5 w-5 text-white"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -905,7 +921,7 @@ export default function FaceDetectionApp() {
                               />
                             </svg>
                           </button>
-                          <span className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded">
+                          <span className="absolute top-1 left-1 bg-blue-500/90 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
                             #{i + 1}
                           </span>
                         </div>
@@ -915,7 +931,7 @@ export default function FaceDetectionApp() {
                 )}
 
                 {faceApiResult.faces.length === 0 && (
-                  <p className="text-gray-500 text-center py-4">
+                  <p className="text-zinc-600 text-center py-6 text-sm">
                     No faces detected
                   </p>
                 )}
@@ -927,162 +943,176 @@ export default function FaceDetectionApp() {
 
       {/* Speed Comparison */}
       {opencvResult && faceApiResult && (
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
+        <div className="glass-card mb-6 sm:mb-8 animate-fade-in-delay">
+          <h2 className="text-base sm:text-lg font-bold text-zinc-200 mb-4 flex items-center gap-2">
+            <svg className="h-4 w-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
             Speed Comparison
           </h2>
 
           <div className="space-y-4">
             {/* OpenCV bar */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-gray-700">
-                  OpenCV.js (WASM)
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-medium text-zinc-400">
+                  OpenCV.js <span className="text-zinc-600">(WASM)</span>
                 </span>
-                <span className="text-sm font-bold text-green-700">
+                <span className="text-xs font-bold text-emerald-400 mono-value">
                   {opencvResult.processingTime.toFixed(1)}ms
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-lg overflow-hidden">
+              <div className="w-full bg-zinc-800/80 rounded-lg overflow-hidden">
                 <div
-                  className="speed-bar bg-green-500"
+                  className="speed-bar bg-gradient-to-r from-emerald-600 to-emerald-500"
                   style={{
                     width:
                       maxTime > 0
-                        ? `${Math.max(5, (opencvResult.processingTime / maxTime) * 100)}%`
-                        : "5%",
+                        ? `${Math.max(8, (opencvResult.processingTime / maxTime) * 100)}%`
+                        : "8%",
                   }}
                 >
-                  {opencvResult.faces.length} face
-                  {opencvResult.faces.length !== 1 ? "s" : ""}
+                  <span className="text-xs">{opencvResult.faces.length} face
+                  {opencvResult.faces.length !== 1 ? "s" : ""}</span>
                 </div>
               </div>
             </div>
 
             {/* face-api.js bar */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-gray-700">
-                  face-api.js (WebGL)
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-medium text-zinc-400">
+                  face-api.js <span className="text-zinc-600">(WebGL)</span>
                 </span>
-                <span className="text-sm font-bold text-blue-700">
+                <span className="text-xs font-bold text-blue-400 mono-value">
                   {faceApiResult.processingTime.toFixed(1)}ms
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-lg overflow-hidden">
+              <div className="w-full bg-zinc-800/80 rounded-lg overflow-hidden">
                 <div
-                  className="speed-bar bg-blue-500"
+                  className="speed-bar bg-gradient-to-r from-blue-600 to-blue-500"
                   style={{
                     width:
                       maxTime > 0
-                        ? `${Math.max(5, (faceApiResult.processingTime / maxTime) * 100)}%`
-                        : "5%",
+                        ? `${Math.max(8, (faceApiResult.processingTime / maxTime) * 100)}%`
+                        : "8%",
                   }}
                 >
-                  {faceApiResult.faces.length} face
-                  {faceApiResult.faces.length !== 1 ? "s" : ""}
+                  <span className="text-xs">{faceApiResult.faces.length} face
+                  {faceApiResult.faces.length !== 1 ? "s" : ""}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Summary */}
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-700">
+          <div className="mt-5 p-3.5 rounded-lg bg-zinc-800/60 border border-zinc-700/40">
+            <p className="text-sm text-zinc-300">
               {opencvResult.processingTime < faceApiResult.processingTime ? (
                 <>
-                  <span className="font-bold text-green-700">
+                  <span className="font-bold text-emerald-400">
                     OpenCV WASM
                   </span>{" "}
                   was{" "}
-                  <span className="font-bold">
+                  <span className="font-bold mono-value">
                     {(
                       faceApiResult.processingTime /
                       opencvResult.processingTime
                     ).toFixed(1)}
                     x
                   </span>{" "}
-                  faster than face-api.js WebGL
+                  faster
                 </>
               ) : opencvResult.processingTime >
                 faceApiResult.processingTime ? (
                 <>
-                  <span className="font-bold text-blue-700">
+                  <span className="font-bold text-blue-400">
                     face-api.js WebGL
                   </span>{" "}
                   was{" "}
-                  <span className="font-bold">
+                  <span className="font-bold mono-value">
                     {(
                       opencvResult.processingTime /
                       faceApiResult.processingTime
                     ).toFixed(1)}
                     x
                   </span>{" "}
-                  faster than OpenCV WASM
+                  faster
                 </>
               ) : (
                 <>Both methods had the same processing time</>
               )}
             </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Note: First run may be slower due to JIT compilation warmup.
-              Re-run for more accurate comparison.
+            <p className="text-[11px] text-zinc-600 mt-1.5">
+              First run may be slower due to JIT warmup. Re-run for accurate comparison.
             </p>
           </div>
         </div>
       )}
 
       {/* Technical Details */}
-      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
+      <div className="glass-card">
+        <h2 className="text-base sm:text-lg font-bold text-zinc-200 mb-4 flex items-center gap-2">
+          <svg className="h-4 w-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          </svg>
           Technical Details
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 text-xs sm:text-sm">
-          <div>
-            <h3 className="font-semibold text-green-700 mb-2">
-              OpenCV.js (WASM)
+          <div className="space-y-2">
+            <h3 className="font-semibold text-emerald-400 text-xs uppercase tracking-wider mb-2">
+              OpenCV.js — WASM
             </h3>
-            <ul className="space-y-1 text-gray-600">
-              <li>
-                <span className="font-medium">Engine:</span> OpenCV 4.9.0
-                compiled to WebAssembly
-              </li>
-              <li>
-                <span className="font-medium">Algorithm:</span> Haar Cascade
-                Classifier
-              </li>
-              <li>
-                <span className="font-medium">Approach:</span> Classical
-                computer vision (feature-based)
-              </li>
-              <li>
-                <span className="font-medium">Execution:</span> CPU via WASM
-              </li>
-            </ul>
+            <div className="space-y-1.5 text-zinc-400">
+              <p>
+                <span className="text-zinc-500">Engine:</span>{" "}
+                <span className="text-zinc-300">OpenCV 4.9.0 → WebAssembly</span>
+              </p>
+              <p>
+                <span className="text-zinc-500">Algorithm:</span>{" "}
+                <span className="text-zinc-300">Haar Cascade Classifier</span>
+              </p>
+              <p>
+                <span className="text-zinc-500">Approach:</span>{" "}
+                <span className="text-zinc-300">Classical CV (feature-based)</span>
+              </p>
+              <p>
+                <span className="text-zinc-500">Execution:</span>{" "}
+                <span className="text-zinc-300">CPU via WASM</span>
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-blue-700 mb-2">
-              face-api.js (WebGL)
+          <div className="space-y-2">
+            <h3 className="font-semibold text-blue-400 text-xs uppercase tracking-wider mb-2">
+              face-api.js — WebGL
             </h3>
-            <ul className="space-y-1 text-gray-600">
-              <li>
-                <span className="font-medium">Engine:</span> TensorFlow.js
-                with WebGL backend
-              </li>
-              <li>
-                <span className="font-medium">Algorithm:</span>{" "}
-                TinyFaceDetector (CNN-based)
-              </li>
-              <li>
-                <span className="font-medium">Approach:</span> Deep learning
-                (neural network)
-              </li>
-              <li>
-                <span className="font-medium">Execution:</span> GPU via WebGL
-              </li>
-            </ul>
+            <div className="space-y-1.5 text-zinc-400">
+              <p>
+                <span className="text-zinc-500">Engine:</span>{" "}
+                <span className="text-zinc-300">TensorFlow.js + WebGL</span>
+              </p>
+              <p>
+                <span className="text-zinc-500">Algorithm:</span>{" "}
+                <span className="text-zinc-300">TinyFaceDetector (CNN)</span>
+              </p>
+              <p>
+                <span className="text-zinc-500">Approach:</span>{" "}
+                <span className="text-zinc-300">Deep learning (neural net)</span>
+              </p>
+              <p>
+                <span className="text-zinc-500">Execution:</span>{" "}
+                <span className="text-zinc-300">GPU via WebGL</span>
+              </p>
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="text-center mt-8 pb-4">
+        <p className="text-[11px] text-zinc-700">
+          All processing runs locally in your browser. No data is sent to any server.
+        </p>
       </div>
     </div>
   );
